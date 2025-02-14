@@ -5,7 +5,9 @@ edition = "2021"
 
 [dependencies]
 poise = { version = "0.6.1" }
-dotenvy = "0.15.7"
+dotenvy = { git = "https://github.com/allan2/dotenvy", branch = "main", features = [
+    "macros",
+] }
 tokio = { version = "1.43.0", features = ["full"] }
 bollard = "0.18.1"
 
