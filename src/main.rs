@@ -1,7 +1,15 @@
+use config::Config;
 use poise::{serenity_prelude as serenity, Framework, FrameworkOptions, PrefixFrameworkOptions};
 use serenity::{ClientBuilder, GatewayIntents};
 
-struct Data {}
+mod commands;
+mod config;
+mod error;
+mod util;
+
+struct Data {
+    config: config::Config,
+}
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
@@ -13,14 +21,14 @@ async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 
 #[dotenvy::load(required = false)]
 #[tokio::main]
-async fn main() {
-    let discord_token = std::env::var("DISCORD_TOKEN").unwrap();
+async fn main() -> Result<(), error::ApplicationError> {
+    let discord_token = std::env::var("DISCORD_TOKEN")?;
 
     let intents = GatewayIntents::non_privileged() | GatewayIntents::GUILD_MESSAGES;
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![ping()],
+            commands: vec![ping(), commands::list_servers()],
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("wl;".to_string()),
                 ..Default::default()
@@ -30,7 +38,9 @@ async fn main() {
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data {})
+                Ok(Data {
+                    config: Config::load()?,
+                })
             })
         })
         .build();
@@ -40,4 +50,6 @@ async fn main() {
         .await;
 
     client.unwrap().start().await.unwrap();
+
+    Ok(())
 }
