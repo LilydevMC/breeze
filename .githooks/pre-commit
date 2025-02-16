@@ -3,12 +3,13 @@
 set -eu
 
 if ! cargo fmt -- --check; then
-    echo "⁉️ There are code style issues, please run 'cargo fmt'."
+    printf "\n⁉️  Found some code style issues! Please run 'cargo fmt'."
     exit 1
 fi
 
 if ! cargo clippy --all-targets -- -D warnings; then
-    echo "⁉️ There are some clippy issues, please run 'cargo clippy'."
+    printf "\n⁉️  Clippy ran into some issues! Please run 'cargo clippy --fix'."
+    printf ""
     exit 1
 fi
 
