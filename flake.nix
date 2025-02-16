@@ -33,7 +33,6 @@
         ];
         buildInputs = with pkgs; [
           openssl
-          # gcc
         ];
       in
       with pkgs;
