@@ -28,7 +28,7 @@ async fn main() -> Result<(), error::ApplicationError> {
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![ping(), commands::list_servers()],
+            commands: vec![ping(), commands::list_servers(), commands::whitelist()],
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("wl;".to_string()),
                 ..Default::default()
