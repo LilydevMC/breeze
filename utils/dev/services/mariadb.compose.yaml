@@ -1,0 +1,15 @@
+services:
+  db:
+    image: mariadb:latest
+    restart: unless-stopped
+    ports:
+      - 3306:3306
+    environment:
+      MARIADB_ROOT_PASSWORD: password
+      MARIADB_DATABASE: whitelist_bot
+
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - 6969:8080

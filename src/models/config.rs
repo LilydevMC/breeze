@@ -18,6 +18,7 @@ pub struct WhitelistConfig {
 pub struct Server {
     pub name: String,
     pub id: String,
+    pub container_id: String,
     pub address: String,
     pub rcon_port: u16,
     pub rcon_password: Option<String>,

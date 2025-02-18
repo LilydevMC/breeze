@@ -1,4 +1,5 @@
-use crate::{config::Server, Context, Error};
+use crate::{models::config::Server, Context, Error};
+use bollard::{secret::ContainerStateStatusEnum, Docker};
 use poise::{
     serenity_prelude::{
         ButtonStyle, ChannelId, CreateButton, CreateEmbed, CreateEmbedFooter, CreateMessage,
@@ -18,46 +19,52 @@ pub struct ServerListEntry {
 pub async fn list_servers(ctx: Context<'_>) -> Result<(), Error> {
     let mut server_list: Vec<ServerListEntry> = vec![];
 
-    for server in &ctx.data().config.servers {
-        let server_addr = format!("{}:{}", &server.address, &server.rcon_port);
-        match crate::util::create_rcon_connection(&server_addr, server.rcon_password.as_deref())
-            .await
-        {
-            Ok(mut _conn) => {
-                // TODO: Get amount of players currently online and display it in embed
-                server_list.push(ServerListEntry {
-                    server: server.clone(),
-                    online: true,
-                });
-            }
-            Err(_) => {
-                server_list.push(ServerListEntry {
-                    server: server.clone(),
-                    online: false,
-                });
-            }
-        };
-    }
-    let description = server_list
-        .iter()
-        .map(|f| {
-            if f.online {
-                format!("🟢 **{}**: Online", f.server.name)
-            } else {
-                format!("🔴 **{}**: Offline", f.server.name)
-            }
-        })
-        .collect::<Vec<String>>()
-        .join("\n");
+    match Docker::connect_with_defaults() {
+        Ok(docker) => {
+            for server in &ctx.data().config.servers {
+                let container = docker.inspect_container(&server.container_id, None).await?;
 
-    ctx.send(
-        CreateReply::default().embed(
-            CreateEmbed::new()
-                .title("ℹ️ Servers")
-                .description(description),
-        ),
-    )
-    .await?;
+                if container.state.unwrap().status.unwrap() == ContainerStateStatusEnum::RUNNING {
+                    server_list.push(ServerListEntry {
+                        server: server.clone(),
+                        online: true,
+                    });
+                } else {
+                    server_list.push(ServerListEntry {
+                        server: server.clone(),
+                        online: false,
+                    });
+                }
+            }
+
+            let description = server_list
+                .iter()
+                .map(|f| {
+                    if f.online {
+                        format!("🟢 **{}** `{}` - _Online_", f.server.name, f.server.id)
+                    } else {
+                        format!("🔴 **{}** `{}` - _Offline_", f.server.name, f.server.id)
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join("\n");
+
+            ctx.send(
+                CreateReply::default().embed(
+                    CreateEmbed::new()
+                        .title("ℹ️ Servers")
+                        .color(0x04a5e5)
+                        .description(description),
+                ),
+            )
+            .await?;
+        }
+        Err(_) => {
+            ctx.send(CreateReply::default().content("Failed to connect to Docker daemon."))
+                .await?;
+        }
+    }
+
     Ok(())
 }
 
@@ -76,9 +83,22 @@ pub async fn request(
     #[description = "Your Minecraft username"] minecraft_username: String,
 ) -> Result<(), Error> {
     let config = &ctx.data().config;
+
+    if !crate::util::validate_minecraft_username(&minecraft_username).await? {
+        ctx.send(
+            CreateReply::default()
+                .ephemeral(true)
+                .content("Invalid Minecraft username! Please make sure you entered it correctly."),
+        )
+        .await?;
+        return Ok(());
+    }
+
     let author = ctx.author();
+    let author_id = author.id.to_string();
 
     let request_id = Uuid::new_v4();
+    let request_id_s = request_id.to_string();
 
     let server = config
         .servers
@@ -86,11 +106,24 @@ pub async fn request(
         .find(|server| server.id == server_id)
         .ok_or("Server not found")?; // TODO: Global custom embed for errors like this
 
-    let approve_button = CreateButton::new(format!("approve-{}", request_id))
+    sqlx::query!(
+        "
+    	INSERT INTO whitelist_request (id, server_id, discord_id, minecraft_username)
+    	VALUES ( ?, ?, ?, ? )
+    	",
+        request_id_s,
+        server_id,
+        author_id,
+        minecraft_username
+    )
+    .fetch_all(&ctx.data().db)
+    .await?;
+
+    let approve_button = CreateButton::new(format!("wlreq-approve-{}", request_id))
         .label("Approve")
         .style(ButtonStyle::Success);
 
-    let deny_button = CreateButton::new(format!("deny-{}", request_id))
+    let deny_button = CreateButton::new(format!("wlreq-deny-{}", request_id))
         .label("Deny")
         .style(ButtonStyle::Danger);
 
@@ -98,8 +131,8 @@ pub async fn request(
         .title(":bell: Whitelist Request")
 		.color(0xdf8e1d)
         .description(format!(
-            "<@{}> has requested to be whitelisted on server _{}_!\n\n**Minecraft Username:** `{}`\n**Server ID:** `{}`\n**Request ID:** `{}`",
-            author.id, server.name, minecraft_username, server.id, request_id
+            "<@{}> has requested to be whitelisted on server _{}_!\n\n**Minecraft Username:** `{}`\n**Server ID:** `{}`\n**Container ID:**: {}\n**Request ID:** `{}`",
+            author.id, server.name, minecraft_username, server.id, server.container_id, request_id
         ))
 		.footer(CreateEmbedFooter::new(ctx.created_at().to_string()));
 

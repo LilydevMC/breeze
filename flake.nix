@@ -30,6 +30,8 @@
         nativeBuildInputs = with pkgs; [
           rustToolchain
           cargo-watch
+          sqlx-cli
+          sqlite
           pkg-config
         ];
         buildInputs = with pkgs; [

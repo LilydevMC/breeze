@@ -1,0 +1,15 @@
+{
+  "sqltools.connections": [
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "previewLimit": 50,
+      "server": "localhost",
+      "driver": "MariaDB",
+      "connectString": "mariadb://root:password@localhost:3306/whitelist_bot",
+      "name": "Whitelist Bot MariaDB Dev"
+    }
+  ]
+}

@@ -1,14 +1,18 @@
-use config::Config;
+use models::config::Config;
 use poise::{serenity_prelude as serenity, Framework, FrameworkOptions, PrefixFrameworkOptions};
 use serenity::{ClientBuilder, GatewayIntents};
+use sqlx::{MySql, Pool};
 
 mod commands;
-mod config;
+mod database;
 mod error;
+mod events;
+mod models;
 mod util;
 
 struct Data {
-    config: config::Config,
+    config: Config,
+    db: Pool<MySql>,
 }
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -19,7 +23,7 @@ async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-#[dotenvy::load(required = false)]
+#[dotenvy::load]
 #[tokio::main]
 async fn main() -> Result<(), error::ApplicationError> {
     let discord_token = std::env::var("DISCORD_TOKEN")?;
@@ -33,6 +37,9 @@ async fn main() -> Result<(), error::ApplicationError> {
                 prefix: Some("wl;".to_string()),
                 ..Default::default()
             },
+            event_handler: |ctx, event, framework, data| {
+                Box::pin(events::event_handler(ctx, event, framework, data))
+            },
             ..Default::default()
         })
         .setup(move |ctx, _ready, framework| {
@@ -40,6 +47,7 @@ async fn main() -> Result<(), error::ApplicationError> {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
                     config: Config::load()?,
+                    db: database::create_pool().await?,
                 })
             })
         })
