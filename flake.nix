@@ -29,7 +29,7 @@
         rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
         nativeBuildInputs = with pkgs; [
           rustToolchain
-          cargo-watch
+          bacon
           sqlx-cli
           sqlite
           pkg-config
