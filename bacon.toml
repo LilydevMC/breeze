@@ -47,6 +47,7 @@ command = [
 need_stdout = true
 allow_warnings = true
 background = true
+watch = ["config.toml"]
 
 # Run your long-running application (eg server) and have the result displayed in bacon.
 # For programs that never stop (eg a server), `background` is set to false
@@ -65,6 +66,7 @@ need_stdout = true
 allow_warnings = true
 background = false
 on_change_strategy = "kill_then_restart"
+watch = ["config.toml"]
 
 # You may define here keybindings that would be specific to
 # a project, for example a shortcut to launch a specific job.
