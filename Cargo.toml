@@ -13,7 +13,7 @@ bollard = "0.18.1"
 
 reqwest = "0.12.12"
 
-rcon = { version = "0.6.0", features = ["rt-tokio"] }
+mc-query = "2.0.0"
 
 thiserror = { version = "2.0.11", features = [] }
 anyhow = "1.0.95"

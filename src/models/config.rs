@@ -20,6 +20,7 @@ pub struct Server {
     pub id: String,
     pub container_id: String,
     pub address: String,
+    pub query_port: u16,
     pub rcon_port: u16,
     pub rcon_password: Option<String>,
 }

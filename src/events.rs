@@ -218,19 +218,19 @@ pub async fn event_handler(
 
                     if id.contains("approve") {
                         if container_status == ContainerStateStatusEnum::RUNNING {
-                            let server_addr = format!("{}:{}", server.address, server.rcon_port);
-
-                            let mut conn = util::create_rcon_connection(
-                                &server_addr,
+                            let mut rcon_client = util::create_rcon_client(
+                                &server.address,
+                                server.rcon_port,
                                 server.rcon_password.clone(),
                             )
                             .await?;
 
-                            conn.cmd(&format!(
-                                "whitelist add {}",
-                                request_info.minecraft_username
-                            ))
-                            .await?;
+                            rcon_client
+                                .run_command(&format!(
+                                    "whitelist add {}",
+                                    request_info.minecraft_username
+                                ))
+                                .await?;
 
                             sqlx::query!(
                                 "

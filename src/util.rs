@@ -1,5 +1,4 @@
-use rcon::{Connection, Error};
-use tokio::net::TcpStream;
+use mc_query::rcon::RconClient;
 
 pub async fn validate_minecraft_username(username: &str) -> Result<bool, crate::Error> {
     match reqwest::get(&format!(
@@ -13,12 +12,17 @@ pub async fn validate_minecraft_username(username: &str) -> Result<bool, crate::
     }
 }
 
-pub async fn create_rcon_connection(
-    address: &str,
+/// Creates a new [RconClient] and authenticates with the given password (or no password if [None]).
+/// [RconClient](mc_query::rcon::RconClient)
+/// [None](std::option::Option::None)
+pub async fn create_rcon_client(
+    host: &str,
+    port: u16,
     password: Option<String>,
-) -> Result<Connection<TcpStream>, Error> {
-    Connection::builder()
-        .enable_minecraft_quirks(true)
-        .connect(address, &password.unwrap_or("".to_string()))
-        .await
+) -> Result<RconClient, crate::Error> {
+    let mut client = RconClient::new(host, port).await?;
+    client
+        .authenticate(&password.unwrap_or("".to_string()))
+        .await?;
+    Ok(client)
 }
