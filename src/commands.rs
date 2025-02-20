@@ -131,7 +131,7 @@ pub async fn request(
         .title(":bell: Whitelist Request")
 		.color(0xdf8e1d)
         .description(format!(
-            "<@{}> has requested to be whitelisted on server _{}_!\n\n**Minecraft Username:** `{}`\n**Server ID:** `{}`\n**Container ID:**: {}\n**Request ID:** `{}`",
+            "<@{}> has requested to be whitelisted on server _{}_!\n\n**Minecraft Username:** `{}`\n**Server ID:** `{}`\n**Container ID:**: `{}`\n**Request ID:** `{}`",
             author.id, server.name, minecraft_username, server.id, server.container_id, request_id
         ))
 		.footer(CreateEmbedFooter::new(ctx.created_at().to_string()));

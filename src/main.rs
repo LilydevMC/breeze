@@ -28,7 +28,9 @@ async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 async fn main() -> Result<(), error::ApplicationError> {
     let discord_token = std::env::var("DISCORD_TOKEN")?;
 
-    let intents = GatewayIntents::non_privileged() | GatewayIntents::GUILD_MESSAGES;
+    let intents = GatewayIntents::non_privileged()
+        | GatewayIntents::GUILD_MESSAGES
+        | GatewayIntents::DIRECT_MESSAGES;
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
