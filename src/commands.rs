@@ -10,9 +10,16 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct PlayerCount {
+    online: u32,
+    max: u32,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ServerListEntry {
     pub server: Server,
     pub online: bool,
+    pub player_count: Option<PlayerCount>,
 }
 
 #[poise::command(slash_command, rename = "list-servers")]
@@ -24,27 +31,47 @@ pub async fn list_servers(ctx: Context<'_>) -> Result<(), Error> {
             for server in &ctx.data().config.servers {
                 let container = docker.inspect_container(&server.container_id, None).await?;
 
-                if container.state.unwrap().status.unwrap() == ContainerStateStatusEnum::RUNNING {
-                    server_list.push(ServerListEntry {
-                        server: server.clone(),
-                        online: true,
-                    });
-                } else {
-                    server_list.push(ServerListEntry {
-                        server: server.clone(),
-                        online: false,
-                    });
-                }
+                let mut player_count: Option<PlayerCount> = None;
+
+                match mc_query::status(&server.address, server.query_port).await {
+                    Ok(status) => {
+                        println!("{:?}", status);
+                        player_count = Some(PlayerCount {
+                            online: status.players.online,
+                            max: status.players.max,
+                        });
+                    }
+                    Err(e) => {
+                        println!("{:?}", e);
+                    }
+                };
+
+                let online =
+                    container.state.unwrap().status.unwrap() == ContainerStateStatusEnum::RUNNING;
+
+                server_list.push(ServerListEntry {
+                    server: server.clone(),
+                    online,
+                    player_count,
+                });
             }
 
+            // TODO: This needs better formatting, it looks terrible
             let description = server_list
                 .iter()
-                .map(|f| {
-                    if f.online {
-                        format!("🟢 **{}** `{}` - _Online_", f.server.name, f.server.id)
-                    } else {
-                        format!("🔴 **{}** `{}` - _Offline_", f.server.name, f.server.id)
-                    }
+                .map(|server| {
+                    format!(
+                        "{} **{}** `{}` - {}{}",
+                        if server.online { "🟢" } else { "🔴" },
+                        server.server.name,
+                        server.server.id,
+                        if server.online { "Online" } else { "Offline" },
+                        if let Some(player_count) = &server.player_count {
+                            format!(" - `{}/{}`", player_count.online, player_count.max)
+                        } else {
+                            "".to_string()
+                        }
+                    )
                 })
                 .collect::<Vec<String>>()
                 .join("\n");
@@ -73,8 +100,6 @@ pub async fn whitelist(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-// TODO: Event handling for button clicks
-// Maybe use SQLite to store requests
 #[poise::command(slash_command)]
 pub async fn request(
     ctx: Context<'_>,
