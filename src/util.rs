@@ -12,17 +12,15 @@ pub async fn validate_minecraft_username(username: &str) -> Result<bool, crate::
     }
 }
 
-/// Creates a new [RconClient] and authenticates with the given password (or no password if [None]).
+/// Creates a new [RconClient] and authenticates with the given password.
+///
 /// [RconClient](mc_query::rcon::RconClient)
-/// [None](std::option::Option::None)
 pub async fn create_rcon_client(
     host: &str,
     port: u16,
-    password: Option<String>,
+    password: String,
 ) -> Result<RconClient, crate::Error> {
     let mut client = RconClient::new(host, port).await?;
-    client
-        .authenticate(&password.unwrap_or("".to_string()))
-        .await?;
+    client.authenticate(&password).await?;
     Ok(client)
 }
