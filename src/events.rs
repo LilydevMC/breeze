@@ -1,11 +1,11 @@
-use bollard::{secret::ContainerStateStatusEnum, Docker};
+use bollard::{Docker, secret::ContainerStateStatusEnum};
 use poise::serenity_prelude as serenity;
 use serenity::{
     CacheHttp, Context, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseFollowup,
     CreateMessage, FullEvent, UserId,
 };
 
-use crate::{models::database::WhitelistRequest, util, Data, Error};
+use crate::{Data, Error, models::database::WhitelistRequest, util};
 
 async fn create_interaction_followup(
     ctx: &Context,

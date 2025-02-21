@@ -1,5 +1,5 @@
 use models::config::Config;
-use poise::{serenity_prelude as serenity, Framework, FrameworkOptions, PrefixFrameworkOptions};
+use poise::{Framework, FrameworkOptions, PrefixFrameworkOptions, serenity_prelude as serenity};
 use serenity::{ClientBuilder, GatewayIntents};
 use sqlx::{MySql, Pool};
 

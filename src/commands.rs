@@ -1,10 +1,10 @@
-use crate::{models::config::Server, Context, Error};
-use bollard::{secret::ContainerStateStatusEnum, Docker};
+use crate::{Context, Error, models::config::Server};
+use bollard::{Docker, secret::ContainerStateStatusEnum};
 use poise::{
+    CreateReply,
     serenity_prelude::{
         ButtonStyle, ChannelId, CreateButton, CreateEmbed, CreateEmbedFooter, CreateMessage,
     },
-    CreateReply,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
