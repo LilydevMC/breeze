@@ -37,8 +37,9 @@ pub struct Server {
 
 impl Config {
     pub fn load() -> Result<Self, crate::error::ApplicationError> {
-        let config = std::fs::read_to_string("config.toml")?;
-        let config: Config = toml::from_str(&config)?;
+        let config_path = std::env::var("CONFIG_PATH").unwrap_or("config.toml".to_string());
+        let config_str = std::fs::read_to_string(config_path)?;
+        let config: Config = toml::from_str(&config_str)?;
         Ok(config)
     }
 }
