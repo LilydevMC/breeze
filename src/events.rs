@@ -1,8 +1,8 @@
 use bollard::{Docker, secret::ContainerStateStatusEnum};
 use poise::serenity_prelude as serenity;
 use serenity::{
-    CacheHttp, Context, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseFollowup,
-    CreateMessage, FullEvent, UserId,
+    CacheHttp, Context, CreateEmbed, CreateEmbedFooter, CreateInteractionResponse,
+    CreateInteractionResponseFollowup, CreateMessage, FullEvent, UserId,
 };
 
 use crate::{Data, Error, models::database::WhitelistRequest, util};
@@ -55,6 +55,12 @@ async fn create_error_followup(
     Ok(())
 }
 
+fn create_dm_footer(guild_name: String, guild_icon: Option<String>) -> CreateEmbedFooter {
+    CreateEmbedFooter::new(format!("From server {guild_name}")).icon_url(
+        guild_icon.unwrap_or("https://files.jadelily.dev/ZabtFsxYPYvgO2bpKry3.png".to_string()),
+    )
+}
+
 pub async fn event_handler(
     ctx: &Context,
     event: &FullEvent,
@@ -75,6 +81,10 @@ pub async fn event_handler(
                         return Err(anyhow::anyhow!("Guild ID not found in interaction").into());
                     }
                 };
+
+                // let guild_icon = guild_id.get_preview(&ctx).await?.icon;
+                let guild_icon = guild_id.to_partial_guild(&ctx).await?.icon_url();
+                let guild_name = guild_id.name(&ctx).unwrap();
 
                 let interaction_author = &component_interaction.user;
 
@@ -216,6 +226,9 @@ pub async fn event_handler(
                         }
                     };
 
+                    let requester_id = request_info.discord_id.parse::<u64>().unwrap();
+                    let user = UserId::new(requester_id);
+
                     if id.contains("approve") {
                         if container_status == ContainerStateStatusEnum::RUNNING {
                             let mut rcon_client = util::create_rcon_client(
@@ -242,28 +255,30 @@ pub async fn event_handler(
                             .execute(&data.db)
                             .await?;
 
-                            let requester_id = request_info.discord_id.parse::<u64>().unwrap();
-                            let user = UserId::new(requester_id);
-
-                            if let Err(error) = user
-                                .dm(
-                                    ctx.http(),
-                                    CreateMessage::new().add_embed(
-                                        CreateEmbed::new()
-                                            .title("✅ Your whitelist request has been approved!")
-											.description(
-												format!(
-													"Your whitelist request for the server _**{}**_ has been approved!\n\n**Server ID:** `{}`\n**Minecraft Username:** `{}`",
-													server.name, server.id, request_info.minecraft_username
+                            if config.whitelist.send_approval_dm {
+                                if let Err(error) = user
+									.dm(
+										ctx.http(),
+										CreateMessage::new().add_embed(
+											CreateEmbed::new()
+												.title("✅ Your whitelist request has been approved!")
+												.description(
+													format!(
+														"Your whitelist request for the server _**{}**_ has been approved!\n\n**Server ID:** `{}`\n**Minecraft Username:** `{}`",
+														server.name, server.id, request_info.minecraft_username
+													)
 												)
-											)
-                                            .color(0x40a02b),
-                                    ),
-                                )
-                                .await
-                            {
-                                println!("Error sending DM: {:?}", error);
-                            };
+												.footer(
+													create_dm_footer(guild_name, guild_icon)
+												)
+												.color(0x40a02b),
+										),
+									)
+									.await
+								{
+									println!("Error sending DM: {:?}", error);
+								};
+                            }
 
                             create_interaction_followup(
                                 ctx,
@@ -289,13 +304,38 @@ pub async fn event_handler(
                     } else if id.contains("deny") {
                         sqlx::query!(
                             "
-										DELETE FROM whitelist_request
-										WHERE id = ?
-										",
+								DELETE FROM whitelist_request
+								WHERE id = ?
+							",
                             request_id
                         )
                         .execute(&data.db)
                         .await?;
+
+                        if config.whitelist.send_denial_dm {
+                            if let Err(error) = user
+								.dm(
+									ctx.http(),
+									CreateMessage::new().add_embed(
+										CreateEmbed::new()
+											.title("❌ Your whitelist request has been denied.")
+											.description(
+												format!(
+													"Your whitelist request for the server _**{}**_ has been denied.\n\n**Server ID:** `{}`\n**Minecraft Username:** `{}`",
+													server.name, server.id, request_info.minecraft_username
+												)
+											)
+											.footer(
+												create_dm_footer(guild_name, guild_icon)
+											)
+											.color(0xd20f39),
+									),
+								)
+								.await
+							{
+								println!("Error sending DM: {:?}", error);
+							};
+                        }
 
                         create_interaction_followup(
                             ctx,
