@@ -45,7 +45,7 @@ async fn create_error_followup(
     create_interaction_followup(
         ctx,
         component_interaction,
-        &format!(":x: Error: {error_title}"),
+        &format!("⁉️ Error: {error_title}"),
         error_description,
         0xd20f39,
         true,
