@@ -1,5 +1,6 @@
 use bollard::{Docker, secret::ContainerStateStatusEnum};
-use poise::serenity_prelude as serenity;
+use chrono::Utc;
+use poise::serenity_prelude::{self as serenity, EditMessage};
 use serenity::{
     CacheHttp, Context, CreateEmbed, CreateEmbedFooter, CreateInteractionResponse,
     CreateInteractionResponseFollowup, CreateMessage, FullEvent, UserId,
@@ -70,6 +71,7 @@ pub async fn event_handler(
     if let FullEvent::InteractionCreate { interaction } = event {
         if let Some(component_interaction) = interaction.as_message_component() {
             let id = component_interaction.data.custom_id.clone();
+            let mut message = component_interaction.message.clone();
 
             println!("Interaction ID: {}", id);
 
@@ -230,6 +232,7 @@ pub async fn event_handler(
                     let user = UserId::new(requester_id);
 
                     if id.contains("approve") {
+                        println!("Approving request {}", request_id);
                         if container_status == ContainerStateStatusEnum::RUNNING {
                             let mut rcon_client = util::create_rcon_client(
                                 &server.address,
@@ -279,6 +282,24 @@ pub async fn event_handler(
 									println!("Error sending DM: {:?}", error);
 								};
                             }
+
+                            message.edit(&ctx, EditMessage::new().embed(
+								CreateEmbed::new()
+									.title("✅ Whitelist request approved!")
+									.description(
+										format!(
+											"Whitelist request approved for <@{}>!\n\n**Request ID:** {}\n**Server ID:** {}\n**Minecraft Username:** {}",
+											request_info.discord_id,
+											request_info.id,
+											request_info.server_id,
+											request_info.minecraft_username
+										)
+									)
+									.footer(
+										CreateEmbedFooter::new(format!("Approved at {}", Utc::now()))
+									)
+									.color(0x40a02b)
+							).components(vec![])).await?;
 
                             create_interaction_followup(
                                 ctx,
@@ -336,6 +357,24 @@ pub async fn event_handler(
 								println!("Error sending DM: {:?}", error);
 							};
                         }
+
+                        message.edit(&ctx, EditMessage::new().embed(
+							CreateEmbed::new()
+								.title(":x: Whitelist request denied")
+								.description(
+									format!(
+										"Whitelist request denied for <@{}>.\n\n**Request ID:** {}\n**Server ID:** {}\n**Minecraft Username:** {}",
+										request_info.discord_id,
+										request_info.id,
+										request_info.server_id,
+										request_info.minecraft_username
+									)
+								)
+								.footer(
+									CreateEmbedFooter::new(format!("Denied at {}", Utc::now()))
+								)
+								.color(0xd20f39)
+						).components(vec![])).await?;
 
                         create_interaction_followup(
                             ctx,
