@@ -84,7 +84,7 @@ pub async fn event_handler(
 
                 // let guild_icon = guild_id.get_preview(&ctx).await?.icon;
                 let guild_icon = guild_id.to_partial_guild(&ctx).await?.icon_url();
-                let guild_name = guild_id.name(&ctx).unwrap();
+                let guild_name = guild_id.name(ctx).unwrap();
 
                 let interaction_author = &component_interaction.user;
 
