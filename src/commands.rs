@@ -34,18 +34,12 @@ pub async fn list_servers(ctx: Context<'_>) -> Result<(), Error> {
 
                 let mut player_count: Option<PlayerCount> = None;
 
-                match mc_query::status(&server.address, server.query_port).await {
-                    Ok(status) => {
-                        println!("{:?}", status);
-                        player_count = Some(PlayerCount {
-                            online: status.players.online,
-                            max: status.players.max,
-                        });
-                    }
-                    Err(e) => {
-                        println!("{:?}", e);
-                    }
-                };
+                if let Ok(status) = mc_query::status(&server.address, server.query_port).await {
+                    player_count = Some(PlayerCount {
+                        online: status.players.online,
+                        max: status.players.max,
+                    });
+                }
 
                 let online =
                     container.state.unwrap().status.unwrap() == ContainerStateStatusEnum::RUNNING;

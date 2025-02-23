@@ -5,6 +5,7 @@ use serenity::{
     CacheHttp, Context, CreateEmbed, CreateEmbedFooter, CreateInteractionResponse,
     CreateInteractionResponseFollowup, CreateMessage, FullEvent, UserId,
 };
+use tracing::{error, info};
 
 use crate::{Data, Error, models::database::WhitelistRequest, util};
 
@@ -72,8 +73,6 @@ pub async fn event_handler(
         if let Some(component_interaction) = interaction.as_message_component() {
             let id = component_interaction.data.custom_id.clone();
             let mut message = component_interaction.message.clone();
-
-            println!("Interaction ID: {}", id);
 
             if id.starts_with("wlreq-") {
                 let config = &data.config;
@@ -232,7 +231,6 @@ pub async fn event_handler(
                     let user = UserId::new(requester_id);
 
                     if id.contains("approve") {
-                        println!("Approving request {}", request_id);
                         if container_status == ContainerStateStatusEnum::RUNNING {
                             let mut rcon_client = util::create_rcon_client(
                                 &server.address,
@@ -279,7 +277,7 @@ pub async fn event_handler(
 									)
 									.await
 								{
-									println!("Error sending DM: {:?}", error);
+									error!("Error sending DM: {:?}", error);
 								};
                             }
 
@@ -354,7 +352,7 @@ pub async fn event_handler(
 								)
 								.await
 							{
-								println!("Error sending DM: {:?}", error);
+								error!("Error sending DM: {:?}", error);
 							};
                         }
 
@@ -389,7 +387,7 @@ pub async fn event_handler(
                         )
                         .await?;
 
-                        println!("Denied request {}", request_id);
+                        info!("Denied request `{}`", request_id);
                     }
                 } else {
                     create_error_followup(

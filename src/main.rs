@@ -26,6 +26,8 @@ async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 #[dotenvy::load]
 #[tokio::main]
 async fn main() -> Result<(), error::ApplicationError> {
+    tracing_subscriber::fmt::init();
+
     let discord_token = std::env::var("DISCORD_TOKEN")?;
 
     let intents = GatewayIntents::non_privileged()
