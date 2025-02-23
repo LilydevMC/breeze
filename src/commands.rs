@@ -1,5 +1,6 @@
 use crate::{Context, Error, models::config::Server};
 use bollard::{Docker, secret::ContainerStateStatusEnum};
+use chrono::Utc;
 use poise::{
     CreateReply,
     serenity_prelude::{
@@ -159,7 +160,7 @@ pub async fn request(
             "<@{}> has requested to be whitelisted on server _{}_!\n\n**Minecraft Username:** `{}`\n**Server ID:** `{}`\n**Container ID:**: `{}`\n**Request ID:** `{}`",
             author.id, server.name, minecraft_username, server.id, server.container_id, request_id
         ))
-		.footer(CreateEmbedFooter::new(ctx.created_at().to_string()));
+		.footer(CreateEmbedFooter::new(format!("Requested at {}", Utc::now())));
 
     let pings = config
         .whitelist
@@ -179,11 +180,10 @@ pub async fn request(
         .send_message(ctx.http(), message)
         .await?;
 
-    ctx.send(
-        CreateReply::default()
-            .ephemeral(true)
-            .content("Sent whitelist request for server `SERVER NAME`!"),
-    )
+    ctx.send(CreateReply::default().ephemeral(true).content(format!(
+        "Sent whitelist request for server `{}`!",
+        server.id
+    )))
     .await?;
 
     Ok(())
