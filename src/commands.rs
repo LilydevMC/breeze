@@ -1,13 +1,12 @@
 use crate::{Context, Error, models::config::Server};
 use bollard::{Docker, secret::ContainerStateStatusEnum};
 use chrono::Utc;
-use poise::{
-    CreateReply,
-    serenity_prelude::{
-        ButtonStyle, ChannelId, CreateButton, CreateEmbed, CreateEmbedFooter, CreateMessage,
-    },
-};
+use poise::{CreateReply, serenity_prelude as serenity};
 use serde::{Deserialize, Serialize};
+use serenity::{
+    AutocompleteChoice, ButtonStyle, ChannelId, CreateButton, CreateEmbed, CreateEmbedFooter,
+    CreateMessage,
+};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -56,6 +55,22 @@ fn create_server_list_fields(servers: Vec<ServerListEntry>) -> Vec<(String, Stri
     }
 
     fields
+}
+
+async fn autocomplete_server_ids(
+    ctx: Context<'_>,
+    partial: &str,
+) -> impl Iterator<Item = AutocompleteChoice> {
+    ctx.data().config.servers.iter().filter_map(move |s| {
+        if s.id.starts_with(partial) {
+            Some(AutocompleteChoice::new(
+                format!("{} ({})", s.name, s.id),
+                s.id.clone(),
+            ))
+        } else {
+            None
+        }
+    })
 }
 
 /// List all servers with their status and additional info if available
@@ -115,6 +130,7 @@ pub async fn whitelist(_: Context<'_>) -> Result<(), Error> {
 pub async fn request(
     ctx: Context<'_>,
     #[description = "ID of the server you want whitelisted in (use /list-servers to get a list of all server IDs!)"]
+    #[autocomplete = "autocomplete_server_ids"]
     server_id: String,
     #[description = "Your Minecraft username"] minecraft_username: String,
 ) -> Result<(), Error> {
