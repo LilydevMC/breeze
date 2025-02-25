@@ -11,18 +11,54 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct PlayerCount {
-    online: u32,
-    max: u32,
+pub struct ServerAdditionalInfo {
+    players_online: u32,
+    players_max: u32,
+    version: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ServerListEntry {
     pub server: Server,
     pub online: bool,
-    pub player_count: Option<PlayerCount>,
+    pub additional_info: Option<ServerAdditionalInfo>,
 }
 
+fn create_server_list_fields(servers: Vec<ServerListEntry>) -> Vec<(String, String, bool)> {
+    let mut fields: Vec<(String, String, bool)> = vec![];
+    for server in servers {
+        let additional_info = server.additional_info;
+
+        let field = match additional_info {
+            Some(info) => (
+                server.server.name,
+                format!(
+                    "**ID:** `{}`\n**Status:** {}\n**Players:** `{}/{}`\n**Version:** `{}`",
+                    server.server.id,
+                    if server.online { "Online" } else { "Offline" },
+                    info.players_online,
+                    info.players_max,
+                    info.version
+                ),
+                false,
+            ),
+            None => (
+                server.server.name,
+                format!(
+                    "**ID:** `{}`\n**Status:** {}",
+                    server.server.id,
+                    if server.online { "Online" } else { "Offline" }
+                ),
+                false,
+            ),
+        };
+        fields.push(field);
+    }
+
+    fields
+}
+
+/// List all servers with their status and additional info if available
 #[poise::command(slash_command, rename = "list-servers")]
 pub async fn list_servers(ctx: Context<'_>) -> Result<(), Error> {
     let mut server_list: Vec<ServerListEntry> = vec![];
@@ -32,12 +68,13 @@ pub async fn list_servers(ctx: Context<'_>) -> Result<(), Error> {
             for server in &ctx.data().config.servers {
                 let container = docker.inspect_container(&server.container_id, None).await?;
 
-                let mut player_count: Option<PlayerCount> = None;
+                let mut additional_info: Option<ServerAdditionalInfo> = None;
 
                 if let Ok(status) = mc_query::status(&server.address, server.query_port).await {
-                    player_count = Some(PlayerCount {
-                        online: status.players.online,
-                        max: status.players.max,
+                    additional_info = Some(ServerAdditionalInfo {
+                        players_online: status.players.online,
+                        players_max: status.players.max,
+                        version: status.version.name,
                     });
                 }
 
@@ -47,39 +84,17 @@ pub async fn list_servers(ctx: Context<'_>) -> Result<(), Error> {
                 server_list.push(ServerListEntry {
                     server: server.clone(),
                     online,
-                    player_count,
+                    additional_info,
                 });
             }
 
-            // TODO: This needs better formatting, it looks terrible
-            let description = server_list
-                .iter()
-                .map(|server| {
-                    format!(
-                        "{} **{}** `{}` - {}{}",
-                        if server.online { "🟢" } else { "🔴" },
-                        server.server.name,
-                        server.server.id,
-                        if server.online { "Online" } else { "Offline" },
-                        if let Some(player_count) = &server.player_count {
-                            format!(" - `{}/{}`", player_count.online, player_count.max)
-                        } else {
-                            "".to_string()
-                        }
-                    )
-                })
-                .collect::<Vec<String>>()
-                .join("\n");
+            let list_embed = CreateEmbed::new()
+                .title("ℹ️ Servers")
+                .color(0x04a5e5)
+                .description("List of servers with info n' stuff!")
+                .fields(create_server_list_fields(server_list));
 
-            ctx.send(
-                CreateReply::default().embed(
-                    CreateEmbed::new()
-                        .title("ℹ️ Servers")
-                        .color(0x04a5e5)
-                        .description(description),
-                ),
-            )
-            .await?;
+            ctx.send(CreateReply::default().embed(list_embed)).await?;
         }
         Err(_) => {
             ctx.send(CreateReply::default().content("Failed to connect to Docker daemon."))
@@ -95,6 +110,7 @@ pub async fn whitelist(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+/// Request to be whitelisted on a server
 #[poise::command(slash_command)]
 pub async fn request(
     ctx: Context<'_>,
