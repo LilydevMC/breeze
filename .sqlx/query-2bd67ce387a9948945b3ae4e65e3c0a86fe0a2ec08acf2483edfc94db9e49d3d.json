@@ -1,0 +1,64 @@
+{
+  "db_name": "MySQL",
+  "query": "\n\t\t\t\t\t\t\tSELECT *\n\t\t\t\t\t\t\tFROM whitelist_request\n\t\t\t\t\t\t\tWHERE id = ?\n\t\t\t\t\t\t",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 144
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "server_id",
+        "type_info": {
+          "type": "Blob",
+          "flags": "NOT_NULL | BLOB | NO_DEFAULT_VALUE",
+          "max_size": 262140
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "discord_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 76
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "minecraft_username",
+        "type_info": {
+          "type": "Blob",
+          "flags": "NOT_NULL | BLOB | NO_DEFAULT_VALUE",
+          "max_size": 262140
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "UNSIGNED | BINARY | TIMESTAMP",
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "2bd67ce387a9948945b3ae4e65e3c0a86fe0a2ec08acf2483edfc94db9e49d3d"
+}

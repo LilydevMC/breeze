@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT EXISTS(SELECT 1 FROM whitelist_request WHERE id = ?) as 'exists'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | BINARY",
+          "max_size": 1
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5ff3a6cbc88709c8ccc0baf5b250fb40012fe9c7c359d451947f210e619752d5"
+}

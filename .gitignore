@@ -2,6 +2,10 @@
 /.direnv
 
 .env
+.env.development
 config.toml
 
 *.db*
+
+# Result from Docker build
+result

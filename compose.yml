@@ -1,0 +1,30 @@
+
+services:
+  bot:
+    image: breeze:latest
+    restart: unless-stopped
+    env_file: .env.development
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      RUST_LOG: breeze=info
+      DATABASE_URL: ${DATABASE_URL}
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      CONFIG_PATH: /config/config.toml
+    volumes:
+      - ./config.toml:/config/config.toml
+      - /var/run/docker.sock:/var/run/docker.sock
+  db:
+    image: mariadb:latest
+    restart: unless-stopped
+    env_file: .env.development
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MARIADB_DATABASE: ${DATABASE_NAME}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3

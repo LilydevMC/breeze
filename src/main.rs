@@ -2,6 +2,7 @@ use models::config::Config;
 use poise::{Framework, FrameworkOptions, PrefixFrameworkOptions, serenity_prelude as serenity};
 use serenity::{ClientBuilder, GatewayIntents};
 use sqlx::{MySql, Pool};
+use tracing::info;
 
 mod commands;
 mod database;
@@ -23,7 +24,7 @@ async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-#[dotenvy::load]
+#[dotenvy::load(required = false)]
 #[tokio::main]
 async fn main() -> Result<(), error::ApplicationError> {
     tracing_subscriber::fmt::init();
@@ -60,6 +61,8 @@ async fn main() -> Result<(), error::ApplicationError> {
     let client = ClientBuilder::new(discord_token, intents)
         .framework(framework)
         .await;
+
+    info!("Started breeze!");
 
     client.unwrap().start().await.unwrap();
 

@@ -3,6 +3,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    crane.url = "github:ipetkov/crane";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs = {
@@ -18,6 +19,7 @@
       nixpkgs,
       flake-utils,
       rust-overlay,
+      crane
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -26,22 +28,65 @@
         pkgs = import nixpkgs {
           inherit system overlays;
         };
+
+        inherit (pkgs) lib;
+
         rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+        craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+
+        unfilteredRoot = ./.;
+        src = lib.fileset.toSource {
+          root = unfilteredRoot;
+          fileset = lib.fileset.unions [
+            (craneLib.fileset.commonCargoSources unfilteredRoot)
+            ./migrations
+            ./.sqlx
+          ];
+        };
+
         nativeBuildInputs = with pkgs; [
           rustToolchain
           bacon
           sqlx-cli
-          sqlite
           pkg-config
         ];
         buildInputs = with pkgs; [
           openssl
         ];
+
+        commonArgs = {
+          inherit src buildInputs nativeBuildInputs;
+          strictDeps = true;
+        };
+        cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+
+        appName = "breeze";
+
+        bin = craneLib.buildPackage (commonArgs // {
+          inherit cargoArtifacts;
+        });
+
+        dockerImage = pkgs.dockerTools.buildImage {
+          name = appName;
+          tag = "latest";
+          copyToRoot = [ bin ];
+          config = {
+            Cmd = [ "${bin}/bin/${appName}" ];
+          };
+        };
       in
-      with pkgs;
       {
-        devShells.default = mkShell {
-          inherit buildInputs nativeBuildInputs;
+        checks = {
+          inherit bin;
+        };
+
+        packages = {
+          inherit bin dockerImage;
+          default = bin;
+        };
+
+        devShells.default = craneLib.devShell {
+          checks = self.checks.${system};
         };
       }
     );

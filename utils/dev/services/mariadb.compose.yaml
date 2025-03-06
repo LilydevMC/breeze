@@ -6,7 +6,7 @@ services:
       - 3306:3306
     environment:
       MARIADB_ROOT_PASSWORD: password
-      MARIADB_DATABASE: whitelist_bot
+      MARIADB_DATABASE: breeze
 
   adminer:
     image: adminer

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n    \tINSERT INTO whitelist_request (id, server_id, discord_id, minecraft_username)\n    \tVALUES ( ?, ?, ?, ? )\n    \t",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "1cf92f1b40ccf85f7b462b971d00daddc3356f013bc6319d84cff2905274010a"
+}
