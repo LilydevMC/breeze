@@ -15,7 +15,8 @@ jobs:
       - name: Cachix
         uses: cachix/cachix-action@v14
         with:
-          name: cachix-nix-cache
+          name: breeze
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Build
         run: nix-build
