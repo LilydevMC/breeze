@@ -20,5 +20,3 @@ jobs:
 
       - name: Build
         run: nix build
-
-      - run: nix-shell --run "echo ok"
