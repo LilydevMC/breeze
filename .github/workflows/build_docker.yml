@@ -1,4 +1,4 @@
-name: Build
+name: Build Docker image
 on: [push, pull_request]
 
 jobs:
@@ -19,4 +19,4 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Build
-        run: nix build
+        run: nix build .#dockerImage
