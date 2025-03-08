@@ -28,6 +28,13 @@ jobs:
           name: ${{ env.IMAGE_NAME }}
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
+      - name: Login to Docker registry
+        uses: docker/login-action@v3.3.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set repo owner to lowercase
         run: echo "REPO_OWNER=${REPO_OWNER@L}" >> "${GITHUB_ENV}"
 
@@ -37,13 +44,6 @@ jobs:
           nix build .#dockerImage 
           docker load < result
           docker image tag ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ env.IMAGE_NAME }}:latest ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-      - name: Login to Docker registry
-        uses: docker/login-action@v3.3.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push Docker image
         run: docker push -a ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ env.IMAGE_NAME }}

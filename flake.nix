@@ -19,7 +19,7 @@
       nixpkgs,
       flake-utils,
       rust-overlay,
-      crane
+      crane,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -62,12 +62,15 @@
 
         appName = "breeze";
 
-        bin = craneLib.buildPackage (commonArgs // {
-          inherit cargoArtifacts;
-        });
+        bin = craneLib.buildPackage (
+          commonArgs
+          // {
+            inherit cargoArtifacts;
+          }
+        );
 
         dockerImage = pkgs.dockerTools.buildImage {
-          name = appName;
+          name = "ghcr.io/lilydevmc/${appName}";
           tag = "latest";
           copyToRoot = [ bin ];
           config = {
