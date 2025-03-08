@@ -6,6 +6,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: "breeze"
+  REPO_OWNER: ${{ github.repository_owner }}
 
 jobs:
   publish:
@@ -22,10 +23,13 @@ jobs:
         uses: cachix/cachix-action@v14
         with:
           name: ${{ env.IMAGE_NAME }}
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Build and load Docker image
         run: nix build .#dockerImage && docker load < result
+
+      - name: Set repo owner to lowercase
+        run: echo "REPO_OWNER=${REPO_OWNER@L}" >> "${GITHUB_ENV}"
 
       - name: Login to Docker registry
         uses: docker/login-action@v3.3.0
@@ -35,4 +39,4 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push Docker image
-        run: docker push ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+        run: docker push ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ env.IMAGE_NAME }}:latest
