@@ -16,7 +16,7 @@ reqwest = "0.12.14"
 mc-query = "2.0.0"
 
 thiserror = { version = "2.0.12", features = [] }
-anyhow = "1.0.95"
+anyhow = "1.0.97"
 
 serde = { version = "1.0.219", features = ["derive"] }
 serde_default_utils = { version = "0.3.1", features = ["inline"] }
