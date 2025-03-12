@@ -1,8 +1,8 @@
-use crate::{Context, Error, models::config::Server};
+use crate::{Context, Error, models::config::Server, utils::autocomplete_server_ids};
 use bollard::{Docker, secret::ContainerStateStatusEnum};
 use poise::{CreateReply, serenity_prelude as serenity};
 use serde::{Deserialize, Serialize};
-use serenity::CreateEmbed;
+use serenity::{CreateEmbed, CreateEmbedFooter};
 
 pub mod whitelist;
 
@@ -54,13 +54,13 @@ fn create_server_list_fields(servers: Vec<ServerListEntry>) -> Vec<(String, Stri
     fields
 }
 
-#[poise::command(slash_command, subcommands("list"))]
+#[poise::command(slash_command, subcommands("list", "players"))]
 pub async fn server(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
 /// List all servers with their status and additional info if available
-#[poise::command(slash_command, rename = "list-servers")]
+#[poise::command(slash_command)]
 async fn list(ctx: Context<'_>) -> Result<(), Error> {
     let mut server_list: Vec<ServerListEntry> = vec![];
 
@@ -93,7 +93,10 @@ async fn list(ctx: Context<'_>) -> Result<(), Error> {
                 .title("ℹ️ Servers")
                 .color(0x04a5e5)
                 .description("List of servers with info n' stuff!")
-                .fields(create_server_list_fields(server_list));
+                .fields(create_server_list_fields(server_list))
+                .footer(CreateEmbedFooter::new(
+                    "Looking for a list of players? Use `/server players`!",
+                ));
 
             ctx.send(CreateReply::default().embed(list_embed)).await?;
         }
@@ -102,6 +105,73 @@ async fn list(ctx: Context<'_>) -> Result<(), Error> {
                 .await?;
         }
     }
+
+    Ok(())
+}
+
+/// Get a list of players on a server
+#[poise::command(slash_command)]
+async fn players(
+    ctx: Context<'_>,
+    #[description = "ID of the target server"]
+    #[autocomplete = "autocomplete_server_ids"]
+    server_id: String,
+) -> Result<(), Error> {
+    let config = &ctx.data().config;
+
+    let server = config
+        .servers
+        .iter()
+        .find(|server| server.id == server_id)
+        .ok_or("Server not found")?;
+
+    let query = match mc_query::status(&server.address, server.query_port).await {
+        Ok(query) => query,
+        Err(_) => {
+            ctx.send(
+                CreateReply::default()
+                    .content("Failed to query server!")
+                    .ephemeral(true),
+            )
+            .await?;
+            return Ok(());
+        }
+    };
+
+    let players = match query.players.sample {
+        Some(players) => players,
+        None => {
+            ctx.send(
+                CreateReply::default()
+                    .content("No players found!")
+                    .ephemeral(true),
+            )
+            .await?;
+            return Ok(());
+        }
+    };
+
+    // This looks kinda ugly but I'm not sure how to format it better
+    let player_list: String = players
+        .into_iter()
+        .map(|p| format!("- {}", p.name))
+        .collect::<Vec<String>>()
+        .join("\n");
+
+    let embed_description = format!(
+        "{} players online on _**{}**_!\n\n{}",
+        query.players.online, server.name, player_list
+    );
+
+    ctx.send(
+        CreateReply::default().embed(
+            CreateEmbed::new()
+                .title("🫂 Online players")
+                .description(embed_description)
+                .color(0x04a5e5),
+        ),
+    )
+    .await?;
 
     Ok(())
 }

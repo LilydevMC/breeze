@@ -15,7 +15,7 @@ pub async fn whitelist(_: Context<'_>) -> Result<(), Error> {
 #[poise::command(slash_command)]
 async fn request(
     ctx: Context<'_>,
-    #[description = "ID of the server you want whitelisted in (use /list-servers to get a list of all server IDs!)"]
+    #[description = "ID of the target server"]
     #[autocomplete = "autocomplete_server_ids"]
     server_id: String,
     #[description = "Your Minecraft username"] minecraft_username: String,

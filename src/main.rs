@@ -18,12 +18,6 @@ struct Data {
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
-#[poise::command(slash_command, prefix_command)]
-async fn ping(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.say("Pong!").await?;
-    Ok(())
-}
-
 #[dotenvy::load(required = false)]
 #[tokio::main]
 async fn main() -> Result<(), error::ApplicationError> {
@@ -38,7 +32,6 @@ async fn main() -> Result<(), error::ApplicationError> {
     let framework = Framework::builder()
         .options(FrameworkOptions {
             commands: vec![
-                ping(),
                 commands::servers::server(),
                 commands::servers::whitelist::whitelist(),
             ],
