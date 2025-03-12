@@ -1,4 +1,6 @@
+use crate::Context;
 use mc_query::rcon::RconClient;
+use poise::serenity_prelude::AutocompleteChoice;
 
 pub async fn validate_minecraft_username(username: &str) -> Result<bool, crate::Error> {
     match reqwest::get(&format!(
@@ -23,4 +25,21 @@ pub async fn create_rcon_client(
     let mut client = RconClient::new(host, port).await?;
     client.authenticate(&password).await?;
     Ok(client)
+}
+
+/// Autocompletes server IDs in commands based on the servers in the config.
+pub async fn autocomplete_server_ids(
+    ctx: Context<'_>,
+    partial: &str,
+) -> impl Iterator<Item = AutocompleteChoice> {
+    ctx.data().config.servers.iter().filter_map(move |s| {
+        if s.id.starts_with(partial) {
+            Some(AutocompleteChoice::new(
+                format!("{} ({})", s.name, s.id),
+                s.id.clone(),
+            ))
+        } else {
+            None
+        }
+    })
 }

@@ -7,7 +7,7 @@ use serenity::{
 };
 use tracing::{error, info};
 
-use crate::{Data, Error, models::database::WhitelistRequest, util};
+use crate::{Data, Error, models::database::WhitelistRequest, utils};
 
 async fn create_interaction_followup(
     ctx: &Context,
@@ -232,7 +232,7 @@ pub async fn event_handler(
 
                     if id.contains("approve") {
                         if container_status == ContainerStateStatusEnum::RUNNING {
-                            let mut rcon_client = util::create_rcon_client(
+                            let mut rcon_client = utils::create_rcon_client(
                                 &server.address,
                                 server.rcon_port,
                                 server.rcon_password.clone(),

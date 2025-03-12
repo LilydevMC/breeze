@@ -9,7 +9,7 @@ mod database;
 mod error;
 mod events;
 mod models;
-mod util;
+mod utils;
 
 struct Data {
     config: Config,
@@ -37,7 +37,11 @@ async fn main() -> Result<(), error::ApplicationError> {
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![ping(), commands::list_servers(), commands::whitelist()],
+            commands: vec![
+                ping(),
+                commands::servers::server(),
+                commands::servers::whitelist::whitelist(),
+            ],
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("wl;".to_string()),
                 ..Default::default()
