@@ -27,6 +27,7 @@ async fn main() -> Result<(), error::ApplicationError> {
 
     let intents = GatewayIntents::non_privileged()
         | GatewayIntents::GUILD_MESSAGES
+        | GatewayIntents::MESSAGE_CONTENT
         | GatewayIntents::DIRECT_MESSAGES;
 
     let framework = Framework::builder()
@@ -35,6 +36,7 @@ async fn main() -> Result<(), error::ApplicationError> {
                 commands::servers::server(),
                 commands::servers::whitelist::whitelist(),
             ],
+            on_error: |error| Box::pin(error::error_handler(error)),
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("wl;".to_string()),
                 ..Default::default()

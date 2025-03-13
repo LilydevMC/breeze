@@ -123,7 +123,7 @@ async fn players(
         .servers
         .iter()
         .find(|server| server.id == server_id)
-        .ok_or("Server not found")?;
+        .ok_or(format!("Server with ID `{}` not found", server_id))?;
 
     let query = match mc_query::status(&server.address, server.query_port).await {
         Ok(query) => query,

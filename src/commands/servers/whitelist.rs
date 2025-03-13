@@ -23,13 +23,11 @@ async fn request(
     let config = &ctx.data().config;
 
     if !crate::utils::validate_minecraft_username(&minecraft_username).await? {
-        ctx.send(
-            CreateReply::default()
-                .ephemeral(true)
-                .content("Invalid Minecraft username! Please make sure you entered it correctly."),
-        )
-        .await?;
-        return Ok(());
+        return Err(
+            format!(
+				"Invalid Minecraft username `{minecraft_username}`. Please make sure you've entered it correctly."
+			).into(),
+        );
     }
 
     let author = ctx.author();
@@ -42,7 +40,7 @@ async fn request(
         .servers
         .iter()
         .find(|server| server.id == server_id)
-        .ok_or("Server not found")?; // TODO: Global custom embed for errors like this
+        .ok_or(format!("Server with ID `{}` not found", server_id))?;
 
     sqlx::query!(
         "
