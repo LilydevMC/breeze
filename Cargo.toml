@@ -8,21 +8,22 @@ poise = { version = "0.6.1" }
 dotenvy = { git = "https://github.com/allan2/dotenvy", branch = "main", features = [
     "macros",
 ] }
-tokio = { version = "1.44.0", features = ["full"] }
+tokio = { version = "1.44.1", features = ["full"] }
 bollard = "0.18.1"
 
 reqwest = "0.12.14"
 
 mc-query = "2.0.0"
 
-thiserror = { version = "2.0.12", features = [] }
+thiserror = "2.0.12"
 anyhow = "1.0.97"
 
 serde = { version = "1.0.219", features = ["derive"] }
 serde_default_utils = { version = "0.3.1", features = ["inline"] }
 toml = "0.8.20"
+strum = { version = "0.27.1", features = ["derive"] }
 
-sqlx = { version = "*", features = [
+sqlx = { version = "0.8.3", features = [
     "runtime-tokio",
     "macros",
     "chrono",

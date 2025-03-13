@@ -1,22 +1,29 @@
 use crate::{Context, Error, models::config::Server, utils::autocomplete_server_ids};
 use bollard::{Docker, secret::ContainerStateStatusEnum};
 use poise::{CreateReply, serenity_prelude as serenity};
-use serde::{Deserialize, Serialize};
 use serenity::{CreateEmbed, CreateEmbedFooter};
+use strum::IntoStaticStr;
 
 pub mod whitelist;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, IntoStaticStr)]
+pub enum ServerStatus {
+    Online,
+    Offline,
+    Restarting,
+}
+
+#[derive(Debug)]
 pub struct ServerAdditionalInfo {
     players_online: u32,
     players_max: u32,
     version: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug)]
 pub struct ServerListEntry {
     pub server: Server,
-    pub online: bool,
+    pub status: ServerStatus,
     pub additional_info: Option<ServerAdditionalInfo>,
 }
 
@@ -25,13 +32,15 @@ fn create_server_list_fields(servers: Vec<ServerListEntry>) -> Vec<(String, Stri
     for server in servers {
         let additional_info = server.additional_info;
 
+        let server_status: &str = server.status.into();
+
         let field = match additional_info {
             Some(info) => (
                 server.server.name,
                 format!(
                     "**ID:** `{}`\n**Status:** {}\n**Players:** `{}/{}`\n**Version:** `{}`",
                     server.server.id,
-                    if server.online { "Online" } else { "Offline" },
+                    server_status,
                     info.players_online,
                     info.players_max,
                     info.version
@@ -42,8 +51,7 @@ fn create_server_list_fields(servers: Vec<ServerListEntry>) -> Vec<(String, Stri
                 server.server.name,
                 format!(
                     "**ID:** `{}`\n**Status:** {}",
-                    server.server.id,
-                    if server.online { "Online" } else { "Offline" }
+                    server.server.id, server_status
                 ),
                 false,
             ),
@@ -79,12 +87,16 @@ async fn list(ctx: Context<'_>) -> Result<(), Error> {
                     });
                 }
 
-                let online =
-                    container.state.unwrap().status.unwrap() == ContainerStateStatusEnum::RUNNING;
+                let server_status = match container.state.unwrap().status.unwrap() {
+                    ContainerStateStatusEnum::RUNNING => ServerStatus::Online,
+                    ContainerStateStatusEnum::CREATED => ServerStatus::Offline,
+                    ContainerStateStatusEnum::RESTARTING => ServerStatus::Restarting,
+                    _ => ServerStatus::Offline, // Default to offline, might change this later
+                };
 
                 server_list.push(ServerListEntry {
                     server: server.clone(),
-                    online,
+                    status: server_status,
                     additional_info,
                 });
             }
