@@ -2,6 +2,7 @@ use crate::Context;
 use mc_query::rcon::RconClient;
 use poise::serenity_prelude::AutocompleteChoice;
 
+/// Returns true if the given Minecraft username is valid.
 pub async fn validate_minecraft_username(username: &str) -> Result<bool, crate::Error> {
     match reqwest::get(&format!(
         "https://api.minecraftservices.com/minecraft/profile/lookup/name/{}",
@@ -10,7 +11,7 @@ pub async fn validate_minecraft_username(username: &str) -> Result<bool, crate::
     .await
     {
         Ok(res) => Ok(res.status().is_success()),
-        Err(_) => Ok(false),
+        Err(err) => Err(err.into()),
     }
 }
 
