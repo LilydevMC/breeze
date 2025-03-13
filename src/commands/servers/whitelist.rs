@@ -22,7 +22,9 @@ async fn request(
 ) -> Result<(), Error> {
     let config = &ctx.data().config;
 
-    if !crate::utils::validate_minecraft_username(&minecraft_username).await? {
+    if !config.whitelist.skip_username_validation
+        && !crate::utils::validate_minecraft_username(&minecraft_username).await?
+    {
         return Err(
             format!(
 				"Invalid Minecraft username `{minecraft_username}`. Please make sure you've entered it correctly."

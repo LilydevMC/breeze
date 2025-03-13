@@ -18,6 +18,8 @@ pub struct WhitelistConfig {
     pub send_approval_dm: bool,
     #[serde(default = "default_bool::<false>")]
     pub send_denial_dm: bool,
+    #[serde(default = "default_bool::<false>")]
+    pub skip_username_validation: bool,
 }
 
 #[serde_inline_default]
